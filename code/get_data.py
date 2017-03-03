@@ -1,15 +1,9 @@
-import tweepy
+import foursquare
+client_id = 'KX1FBBNOJQ00KMIFG3DKCZMQZGIWEGPHHHGHUHKNKF4J1SQE'
+client_secret = '1YUQX32MGD0FOPEHGMSRNXGJ0LOBXJNBJ3HYVH4IGHGVTRSB'
 
-consumer_key = 'kfaj0I2197iZvXhcQUYdlGBwp'
-consumer_secret = '3IST0USpxSKDOsqTnUlbC87x3mgdQResvaSWLWozdlka8VRCm7'
-access_token = '709704756336308226-6eN5Avi0VzSb7WqRHso3Ayu2xKDXYdR'
-access_secret = 'DRXzJD6IP2v1VhYRaGFpkUfL6WjE19AL60HRW3D7mQW4h'
-
-auth  = tweepy.OAuthHandler(consumer_key,consumer_secret)
-auth.set_access_token(access_token,access_secret)
-api = tweepy.API(auth)
-public_tweets = api.search('Trump')
-
-for tweet in public_tweets:
-    print(tweet.text)
-
+client = foursquare.Foursquare(client_id=client_id, client_secret=client_secret,redirect_uri='http://localhost:9000')
+access_token = client.oauth.get_token('')
+client.set_access_token(access_token)
+user = client.users()
+print(user)
