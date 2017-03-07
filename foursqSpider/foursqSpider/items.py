@@ -13,4 +13,10 @@ class FoursqspiderItem(scrapy.Item):
     # name = scrapy.Field()
     content = scrapy.Field()
     date = scrapy.Field()
-    userName = scrapy.Field()
+    user_name = scrapy.Field()
+
+class NycItem(scrapy.Item):
+    location_name = scrapy.Field()
+    content = scrapy.Field()
+    date = scrapy.Field()
+    user_name = scrapy.Field()
