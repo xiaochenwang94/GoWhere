@@ -7,7 +7,7 @@ from foursqSpider.items import FoursqspiderItem
 class FsqSpider(scrapy.Spider):
     name = 'foursquare'
     allow_domains = ['foursquare.com']
-    start_urls = ['https://foursquare.com/v/madison-square-park/40b68100f964a5207d001fe3']
+    start_urls = ['https://foursquare.com/v/madison-square-garden/4ae6363ef964a520aba521e3']
     # start_urls = ['https://foursquare.com/v/madison-square-park/40b68100f964a5207d001fe3?tipsPage=%s&tipsSort=popular' % i for i in xrange(1,9)]
     def __init__(self):
         self.index = 0
