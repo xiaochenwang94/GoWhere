@@ -15,3 +15,5 @@ Semantic Annotation of Mobility Data using Social Media
 | tweets		| tweet的内容	|
 
 其中位置字段为经度纬度合并在一起的字段，因原数据集所带，在此并没有去除掉。
+
+由于location存在编码问题，于是手动删除了这一列，从而方便后面的数据处理。
