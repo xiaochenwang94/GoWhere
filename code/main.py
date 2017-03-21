@@ -6,11 +6,18 @@ from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 
+madison_long = -73.993278
+madison_lati = 40.750456
+
+
 class Result(object):
 
     def __init__(self, w='', s=0.0):
         self.word = w
         self.score = s
+
+    def __lt__(self, other):
+        return self.score > other.score
 
 class CheckIn(object):
 
@@ -42,41 +49,72 @@ def process_foursquare():
 
 
 def score(data, word):
-    # L = 0
-    # s = 0
-    # for d in data:
-    #     if word in d['tweets'].split():
-    #         L += 1
-    #         s += stats.gaussian_kde()
-    # return Result(word, s/L)
-    sel = data[word in data]
+    idx = []
+    band_width = 1e-4
+    print('word is %s' % word)
+
+    for i in range(data.shape[0]):
+        # print(data.iloc[i]['tweets'].split())
+        if word in data.iloc[i]['tweets'].split():
+            idx.append(i)
+    if idx.__len__() < 5:
+        return Result(word, -1)
+    # print(idx.__len__())
+    # a = input("print idx......")
+    # print(idx)
+    selx = list(data.iloc[idx]['long'] - madison_long)
+    sely = list(data.iloc[idx]['lati'] - madison_lati)
+    values = np.vstack([selx,sely])
+    # a = input("print values......")
+    # print(selx)
+    # print(sely)
+    # print(values)
+    # a = input()
+    try:
+        kernel = stats.gaussian_kde(values, bw_method='scott')
+    except:
+        return Result(word, -1)
+    print(word,kernel((0,0)),idx.__len__())
+    # a = input()
+    return Result(word,kernel((0,0)))
+
 
 
 def kde(data, check, k=5):
+    print('Using kernel density estimation......')
     # 选出check当天的所有数据
-    # print(data.head())
     select = data[data['time'] == check.date]
+    print('date: %s \n dataset shape %s' %(check.date, select.shape[0]) )
     # 总结出当天的word list
     word_list = set()
-    print(select.shape)
+    # print(select.shape)
     for idx in range(select.shape[0]):
         w = set(select.iloc[idx]['tweets'].split())
         word_list = word_list | w
-    print(word_list)
+    # print(word_list)
+
     # 计算每个单词的概率,排序
     result = []
+    print('word list size is %s' % word_list.__len__())
     for word in word_list:
-        result.append(score(select, word))
+        r = score(select,word)
+        if r.score != -1:
+            result.append(r)
+
     # sort result
-    # return result[:k]
+    result.sort()
+    return result[:k]
+
 
 def annotate(tweets, checkins):
+    print('Start annotation......')
+    print('Tweets dataset shape %s' % tweets.shape[0])
+    print('Checkins dataset shape %s' % checkins.shape[0])
     ret = {}
-    print(type(checkins))
     for idx in range(checkins.shape[0]):
         words = kde(tweets, checkins.iloc[idx])
-        w = input()
-        # ret[checkin] = words
+
+    print('annotation ended......')
     return ret
 
 if __name__ == '__main__':
