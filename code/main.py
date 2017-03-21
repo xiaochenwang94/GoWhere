@@ -20,59 +20,74 @@ class CheckIn(object):
         self.ground_truth = []
         self.time = t
 
-def process_data(data):
+def process_data():
+    data = pd.read_csv('../data/data_NewYork.csv')
     print('Processing data......')
     for i in data['time'].index:
-        # data['time'][i] = datetime.strptime(data['time'][i], '%Y-%m-%dT%H:%M:%S')
-        # tmp = datetime.strptime(data['time'][i], '%Y-%m-%dT%H:%M:%S')
-        # print(pd.to_datetime(str(pd.to_datetime(data['time'])[i]).split()[0]))
-        # data['time'][i] = pd.to_datetime(str(pd.to_datetime(data['time'])[i]).split()[0])
         data['time'][i] = str(pd.to_datetime(data['time'])[i]).split()[0]
         if i % 100 == 0:
             print(i, data['time'][i])
     data.to_csv('../data/processed_data.csv')
     print('Data after processing is stored in processed_data.csv.')
 
-def process_foursquare(data):
+def process_foursquare():
+    data = pd.read_csv('../data/madison.csv')
     print('Processing foursquare data......')
-    for i in data['date'].index:
-        data['date'][i] = datetime.strftime(data['time'][i],'')
-    pass
+    data['date'] = pd.to_datetime(data['date'], errors='coerce')
+    tmp = data[data['date'] < '2010-03-10']
+    tmp = tmp[tmp['date'] > '2010-03-01']
+    # print(data['date'])
+    tmp.to_csv('../data/processed_madison.csv')
+    print('4sq data processed.')
 
 
 def score(data, word):
-    L = 0
-    s = 0
-    for d in data:
-        if word in d['tweets'].split():
-            L += 1
-            s += stats.gaussian_kde()
-    return Result(word, s/L)
+    # L = 0
+    # s = 0
+    # for d in data:
+    #     if word in d['tweets'].split():
+    #         L += 1
+    #         s += stats.gaussian_kde()
+    # return Result(word, s/L)
+    sel = data[word in data]
+
 
 def kde(data, check, k=5):
     # 选出check当天的所有数据
-    select = data[data['time'] == check.time]
+    # print(data.head())
+    select = data[data['time'] == check.date]
     # 总结出当天的word list
-    word_list = ([x for x in select['tweets'].split()])
+    word_list = set()
+    print(select.shape)
+    for idx in range(select.shape[0]):
+        w = set(select.iloc[idx]['tweets'].split())
+        word_list = word_list | w
     print(word_list)
     # 计算每个单词的概率,排序
     result = []
     for word in word_list:
         result.append(score(select, word))
     # sort result
-    return result[:k]
+    # return result[:k]
 
-
+def annotate(tweets, checkins):
+    ret = {}
+    print(type(checkins))
+    for idx in range(checkins.shape[0]):
+        words = kde(tweets, checkins.iloc[idx])
+        w = input()
+        # ret[checkin] = words
+    return ret
 
 if __name__ == '__main__':
     if not os.path.isfile('../data/processed_data.csv'):
-        data = pd.read_csv('../data/data_NewYork.csv')
-        process_data(data)
-    # if not os.path.isfile('./processed_madison.csv'):
-    #     foursquare = pd.read_csv('./madison.csv')
-    #     process_foursquare(foursquare)
-    # d = pd.read_csv('./processed_data.csv')
-    # print(type(foursquare))
+        process_data()
+    if not os.path.isfile('../data/processed_madison.csv'):
+        process_foursquare()
+    tweets = pd.read_csv('../data/processed_data.csv')
+    fsq = pd.read_csv('../data/processed_madison.csv')
+    annotation = annotate(tweets, fsq)
+    print('end......')
 
 
 
