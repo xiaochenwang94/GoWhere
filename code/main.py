@@ -134,7 +134,15 @@ def annotate(tweets, checkins):
 def initialize_data(fsq_file, tweets_file):
     if not os.path.isfile(tweets_file):
         data = pd.read_csv('../data/tweets.csv')
-        
+        idx = data['Latitude'] <= 42
+        idx &= data['Latitude'] >= 38
+        idx &= data['Longitude'] <= -72
+        idx &= data['Longitude'] >= -76
+        data = data[idx]
+        # data = data.loc[:,['Tweet Id', 'Latitude', 'Longitude',
+        #                    'Tweet content','Date']]
+        data = data.set_index('Tweet Id', inplace=False, drop=True)
+        data.to_csv(tweets_file)
 
 
 if __name__ == '__main__':
