@@ -17,3 +17,7 @@ Semantic Annotation of Mobility Data using Social Media
 其中位置字段为经度纬度合并在一起的字段，因原数据集所带，在此并没有去除掉。
 
 由于location存在编码问题，于是手动删除了这一列，从而方便后面的数据处理。
+
+
+##new dataset 2017.3.27
+数据来源:http://followthehashtag.com/datasets/free-twitter-dataset-usa-200000-free-usa-tweets/

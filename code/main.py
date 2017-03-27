@@ -60,9 +60,27 @@ def score(word, locations):
         sely.append(lati- madison_lati)
     values = np.vstack([selx,sely])
     try:
-        kernel = stats.gaussian_kde(values, bw_method=band_width)
+        kernel = stats.gaussian_kde(values, bw_method='scott')
     except:
         return Result(word, -1)
+    if len(locations) > 1000:
+        selx = np.array(selx)
+        sely = np.array(sely)
+        xmin = selx.min()
+        xmax = selx.max()
+        ymin = sely.min()
+        ymax = sely.max()
+        X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+        positions = np.vstack([X.ravel(), Y.ravel()])
+        Z = np.reshape(kernel(positions).T, X.shape)
+        fig, ax = plt.subplots()
+        ax.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
+                  extent=[xmin, xmax, ymin, ymax])
+        ax.plot(selx, sely, 'r.', markersize=2)
+        ax.set_xlim([xmin, xmax])
+        ax.set_ylim([ymin, ymax])
+        print(word, kernel((0,0)))
+        plt.show()
     return Result(word,kernel((0,0)))
 
 
@@ -74,9 +92,15 @@ def kde(data, check, k=5):
     print('date: %s \ndataset shape %s' % (check.date, select.shape[0]))
     # 总结出当天的word list
     word_list = defaultdict(list)
+    filter_words = ['to','on','me','u','not','get','i\'m','be','in','the','i'
+                    'it','but','got','my','and','of','so','up','was','all',
+                    'that','this','you','he','she','like','for']
     for index, row in select.iterrows():
         words = set(row['tweets'].split())
         for w in words:
+            w = w.lower()
+            if w in filter_words:
+                continue
             word_list[w].append((row['lati'], row['long']))
     # 计算每个单词的概率,排序
     result = []
@@ -85,12 +109,13 @@ def kde(data, check, k=5):
         r = score(key, value)
         if r.score != -1:
             result.append(r)
-            print(key, ':', r.score)
+            # print(key, ':', r.score)
 
     # sort result
     result.sort()
     print("Result.......")
-    print(result[:k])
+    for r in result[:100]:
+        print(r.word, r.score)
     return result[:k]
 
 
@@ -107,27 +132,26 @@ def annotate(tweets, checkins):
     return ret
 
 def initialize_data(fsq_file, tweets_file):
-    if not os.path.isfile(fsq_file):
-        pass
     if not os.path.isfile(tweets_file):
-        pass
+        data = pd.read_csv('../data/tweets.csv')
+        
 
 
 if __name__ == '__main__':
 
-    # fsq_file = '../data/fsq.csv'
-    # tweets_file = '../data/tweets.csv'
-    # initialize_data(fsq_file, tweets_file)
+    fsq_file = '../data/fsq.csv'
+    tweets_file = '../data/tweets_processed.csv'
+    initialize_data(fsq_file, tweets_file)
 
-    if not os.path.isfile('../data/processed_data.csv'):
-        process_data()
-    if not os.path.isfile('../data/processed_madison.csv'):
-        process_foursquare()
-
-    tweets = pd.read_csv('../data/processed_data.csv')
-    fsq = pd.read_csv('../data/processed_madison.csv')
-    annotation = annotate(tweets, fsq)
-    print('end......')
+    # if not os.path.isfile('../data/processed_data.csv'):
+    #     process_data()
+    # if not os.path.isfile('../data/processed_madison.csv'):
+    #     process_foursquare()
+    #
+    # tweets = pd.read_csv('../data/processed_data.csv')
+    # fsq = pd.read_csv('../data/processed_madison.csv')
+    # annotation = annotate(tweets, fsq)
+    # print('end......')
 
 
 

@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
-a = [1,2,3,4,5]
-plt.plot(a)
-plt.show()
+import pandas as pd
+data = pd.read_csv('../data/tweets.csv')
+print(data.shape)
+print(data.head())
