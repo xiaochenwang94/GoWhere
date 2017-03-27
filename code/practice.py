@@ -1,8 +1,4 @@
-class Result(object):
-
-    def __init__(self, w='', s=0.0):
-        self.word = w
-        self.score = s
-d = {}
-l = [Result('a',1), Result('b',2)]
-d
+import matplotlib.pyplot as plt
+a = [1,2,3,4,5]
+plt.plot(a)
+plt.show()
