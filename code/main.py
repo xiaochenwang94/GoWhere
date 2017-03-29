@@ -52,43 +52,54 @@ def process_foursquare():
     print('4sq data processed.')
 
 
-def score(word, locations):
-    if len(locations) < 5:
-        return Result(word, -1)
-    band_width = 1e-4
-    selx = []
-    sely = []
-    for lati, long in locations:
-        selx.append(long - madison_long)
-        sely.append(lati- madison_lati)
-    values = np.vstack([selx,sely])
-    try:
-        kernel = stats.gaussian_kde(values, bw_method='scott')
-    except:
-        return Result(word, -1)
-    if len(locations) > 1000:
-        selx = np.array(selx)
-        sely = np.array(sely)
-        xmin = selx.min()
-        xmax = selx.max()
-        ymin = sely.min()
-        ymax = sely.max()
-        X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
-        positions = np.vstack([X.ravel(), Y.ravel()])
-        Z = np.reshape(kernel(positions).T, X.shape)
-        fig, ax = plt.subplots()
-        ax.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
-                  extent=[xmin, xmax, ymin, ymax])
-        ax.plot(selx, sely, 'r.', markersize=2)
-        ax.set_xlim([xmin, xmax])
-        ax.set_ylim([ymin, ymax])
-        # print(word, kernel((0,0)))
-        plt.show()
-    return Result(word,kernel((0,0)))
+# def score(word, locations):
+#     if len(locations) < 5:
+#         return Result(word, -1)
+#     band_width = 1e-4
+#     selx = []
+#     sely = []
+#     for lati, long in locations:
+#         selx.append(long - madison_long)
+#         sely.append(lati- madison_lati)
+#     values = np.vstack([selx,sely])
+#     try:
+#         kernel = stats.gaussian_kde(values, bw_method='scott')
+#     except:
+#         return Result(word, -1)
+#     if len(locations) > 1000:
+#         selx = np.array(selx)
+#         sely = np.array(sely)
+#         xmin = selx.min()
+#         xmax = selx.max()
+#         ymin = sely.min()
+#         ymax = sely.max()
+#         X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+#         positions = np.vstack([X.ravel(), Y.ravel()])
+#         Z = np.reshape(kernel(positions).T, X.shape)
+#         fig, ax = plt.subplots()
+#         ax.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
+#                   extent=[xmin, xmax, ymin, ymax])
+#         ax.plot(selx, sely, 'r.', markersize=2)
+#         ax.set_xlim([xmin, xmax])
+#         ax.set_ylim([ymin, ymax])
+#         # print(word, kernel((0,0)))
+#         plt.show()
+#     return Result(word,kernel((0,0)))
 
+def kernel(x, y, h):
+    x = np.array([x, y])
+    e = np.exp(-1/(2*h)*x.dot(x.T))
+    return 1/(2*np.pi*h)*e
 
+def score(word, values):
+    s = 0
+    bw = 1e-4
+    for value in values:
+        s += kernel(value[0] - madison_lati, value[1] - madison_long, h=bw)
+    s /= len(values)
+    return Result(word, s)
 
-def kde(data, check, k=5):
+def kde(data, check, stop_words, k=5):
     print('Using kernel density estimation......')
     # 选出check当天的所有数据
     # select = data[data['Date'] == check.date]
@@ -103,7 +114,9 @@ def kde(data, check, k=5):
         words = set(row['Tweet content'].split())
         for w in words:
             w = w.lower()
-            if w in filter_words:
+            if w[0] == '#':
+                w = w[1:-1]
+            if w in stop_words:
                 continue
             word_list[w].append((row['Latitude'], row['Longitude']))
     # 计算每个单词的概率,排序
@@ -123,30 +136,30 @@ def kde(data, check, k=5):
     return result[:k]
 
 
-def annotate(tweets, checkins):
+def annotate(tweets, checkins, stop_words):
     print('Start annotation...')
     print('Tweets dataset shape %s' % tweets.shape[0])
     print('Checkins dataset shape %s' % checkins.shape[0])
     ret = {}
     for index, row in checkins.iterrows():
-        words = kde(tweets, row)
+        words = kde(tweets, row, stop_words)
         a = input('next word\n')
     print('annotation ended......')
     return ret
 
 def initialize_data(fsq_file, tweets_file):
     if not os.path.isfile(tweets_file):
-        data = pd.read_csv('../data/tweets.csv',encoding = 'ISO-8859-1')
+        data = pd.read_csv('../data/tweets.csv',encoding='ISO-8859-1')
         # 34.049770, -118.238735
         idx = data['Latitude'] <= 42
         idx &= data['Latitude'] >= 38
         idx &= data['Longitude'] <= -72
         idx &= data['Longitude'] >= -76
         data = data[idx]
-        data = data.loc[:,['Tweet Id', 'Latitude', 'Longitude',
-                           'Tweet content','Date']]
+        # data = data.loc[:,['Tweet Id', 'Latitude', 'Longitude',
+        #                    'Tweet content','Date']]
         data = data.set_index('Tweet Id', inplace=False, drop=True)
-        data.to_csv(tweets_file)
+        data.to_csv(tweets_file, encoding='utf8')
     if not os.path.isfile(fsq_file):
         process_foursquare()
 
@@ -156,10 +169,12 @@ if __name__ == '__main__':
     fsq_file = '../data/processed_madison.csv'
     tweets_file = '../data/tweets_processed.csv'
     initialize_data(fsq_file, tweets_file)
-
     tweets = pd.read_csv('../data/tweets_processed.csv')
     fsq = pd.read_csv('../data/processed_madison.csv')
-    annotation = annotate(tweets, fsq)
+    f = open('../data/stop-word-list.csv', 'r')
+    line = f.readline()
+    stop_words = line.split(',')
+    annotation = annotate(tweets, fsq, stop_words)
     print('end......')
 
 
